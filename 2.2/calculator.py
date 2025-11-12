@@ -8,3 +8,20 @@ exercises to include calculations, if you wish.
 Remember to design your algorithm in English first, then translate it to Python 
 code. Test as you go!
 """
+print("Hello, I am a calculator")
+
+firstNum= input("Please input your first number:    ")
+operation = input("Please input the operation ex.(*+/-):    ").strip()
+secondNum = input("Input your second number:   ")
+
+match operation:
+    case "+":
+        answer = float(firstNum) + float(secondNum)
+    case "-":
+        answer = float(firstNum) - float(secondNum)
+    case "*":
+        answer = float(firstNum) * float(secondNum)
+    case "/":
+        answer = float(firstNum) / float(secondNum)
+
+print(answer)

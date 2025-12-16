@@ -1,8 +1,9 @@
 from PIL import Image
+import colorsys
 import time
 
 folder = "6.7/images"
-# hardcoded list of image files
+
 image_files = [
     "Rust1.jpeg",
     "Rust2.jpg",
@@ -18,83 +19,72 @@ image_files = [
 
 def is_rust(pixel):
     r, g, b = pixel
-    #colour thresholds for rust
-    if r >= 120 and r <= 255 and \
-       g >= 60 and g <= 160 and \
-       b >= 0 and b <= 90 and \
-       r > g and g > b:
-        return True
-    else:
-        return False
+    r /= 255
+    g /= 255
+    b /= 255
+    h, s, v = colorsys.rgb_to_hsv(r, g, b)
+    return 0.02 <= h <= 0.12 and s >= 0.3 and v >= 0.15
 
-# main program
+# Main program
 image_scores = []
-# start timing
 start = time.time()
-# loop through images
+
+# Process each image
 for img in image_files:
-    print("Processing:", img)
-    
-    # Open the image (assuming the file exists))
-    image = Image.open(f"{folder}/{img}")
-    image = image.convert("RGB")
+    print("Processing: " + img)
+    image = Image.open(folder + "/" + img).convert("RGB")
     width, height = image.size
     total_pixels = width * height
-    rust_pixel_count = 0
+    rust_pixels = 0
 
-    #Count the rust pixels
+    # Pixel analysis
+    pixels = image.load()
     for x in range(width):
         for y in range(height):
-            r, g, b = image.getpixel((x, y))
-            if is_rust((r, g, b)):
-                rust_pixel_count += 1    
-    rust_percent = rust_pixel_count / total_pixels * 100
+            if is_rust(pixels[x, y]):
+                rust_pixels += 1
+
+    # Calculate rust percentage and store to list
+    rust_percent = rust_pixels / total_pixels * 100
     image_scores.append([img, rust_percent])
 
-# end timing
 end = time.time()
-print(f"\nProcessing time: {end - start:.3f} seconds")
+print("\nProcessing time: " + str(round(end - start, 3)) + " seconds")
 
-#Selection Sort to sort images by rust % (descending)
+# Selection sort (descending by rust %)
 for i in range(len(image_scores)):
-    # Track the largest score found so far in the unsorted section
-    largest_score = image_scores[i][1]
     largest_index = i
     for j in range(i + 1, len(image_scores)):
-        # Compare current item's score with our tracked largest
-        if image_scores[j][1] > largest_score:
-            largest_score = image_scores[j][1]
+        if image_scores[j][1] > image_scores[largest_index][1]:
             largest_index = j
-    # Swap the found largest item with the item at position i
-    image_scores[largest_index], image_scores[i] = image_scores[i], image_scores[largest_index]
+    image_scores[i], image_scores[largest_index] = image_scores[largest_index], image_scores[i]
 
-# print top 5 images
+# Print top 5 images
 print("\nTop images:")
 for i in range(min(5, len(image_scores))):
-    print(image_scores[i][0], "-", round(image_scores[i][1], 2), "%")
+    print(image_scores[i][0] + " - " + str(round(image_scores[i][1], 2)) + "%")
 
-# Binary Search for user-input rust %
+# Binary search for user-input rust %
 query = input("\nEnter rust % to find (or skip): ")
 if query != "":
     target = float(query)
-    found = False
     first = 0
     last = len(image_scores) - 1
     tol = 0.01
+    found = False
 
     while first <= last:
         mid = (first + last) // 2
         mid_value = image_scores[mid][1]
-        # Check if we found the value (within tolerance)
+
         if abs(mid_value - target) <= tol:
-            print("Found:", image_scores[mid][0], "-", round(mid_value, 2), "%")
+            print("Found: " + image_scores[mid][0] + " - " + str(round(mid_value, 2)) + "%")
             found = True
             break
-        # If mid_value is less than target, target must be to the LEFT (lower index)
         elif mid_value < target:
             last = mid - 1
-        # If mid_value is greater than target, target must be to the RIGHT (higher index)
-        else: 
+        else:
             first = mid + 1
+
     if not found:
         print("No match")

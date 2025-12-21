@@ -20,10 +20,13 @@ image_files = [
 
 def is_rust(pixel):
     r, g, b = pixel
-    r /= 255
-    g /= 255
-    b /= 255
-    h, s, v = colorsys.rgb_to_hsv(r, g, b)
+    
+    if r < 80 or r < g or r < b:
+        return False
+    
+    rh, gh, bh = r/255, g/255, b/255
+    h, s, v = colorsys.rgb_to_hsv(rh, gh, bh)
+    
     return 0.02 <= h <= 0.12 and s >= 0.3 and v >= 0.15
 
 def get_all_scores():
@@ -36,6 +39,9 @@ def get_all_scores():
     for img in image_files:
         print("Processing: " + img)
         image = Image.open(folder + "/" + img).convert("RGB")
+        
+        image.thumbnail((800, 800))
+        
         width, height = image.size
         total_pixels = width * height
         rust_pixels = 0

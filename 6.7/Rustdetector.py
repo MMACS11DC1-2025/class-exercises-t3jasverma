@@ -18,17 +18,26 @@ image_files = [
     "Rust10.jpg"
 ]
 
-def is_rust(pixel):
+# This function checks if a pixel is rust. It filters out colors 
+# that aren't red-dominant first, then uses HSV to check if the color 
+# falls in the specific orange-brown range. 
+# It serves as the primary detection logic for the program.
+def is_target_feature(pixel):
     r, g, b = pixel
     
+    # Check for red dominance and minimum brightness
     if r < 80 or r < g or r < b:
         return False
     
-    rh, gh, bh = r/255, g/255, b/255
+    rh, gh, bh = r/255.0, g/255.0, b/255.0
     h, s, v = colorsys.rgb_to_hsv(rh, gh, bh)
     
+    # Final check against the known rust hue range
     return 0.02 <= h <= 0.12 and s >= 0.3 and v >= 0.15
 
+# This goes through the list of images, resizes them to 800px 
+# to save time, and calculates the rust percentage for each one.
+# It uses .load() for fast pixel access to optimize processing speed.
 def get_all_scores():
     # main program
     image_scores = []
@@ -40,6 +49,7 @@ def get_all_scores():
         print("Processing: " + img)
         image = Image.open(folder + "/" + img).convert("RGB")
         
+        # Downscaling to optimize performance
         image.thumbnail((800, 800))
         
         width, height = image.size
@@ -50,7 +60,7 @@ def get_all_scores():
         pixels = image.load()
         for x in range(width):
             for y in range(height):
-                if is_rust(pixels[x, y]):
+                if is_target_feature(pixels[x, y]):
                     rust_pixels += 1
 
         # Calculate rust percentage and store to list
@@ -61,6 +71,9 @@ def get_all_scores():
     print("\nProcessing time: " + str(round(end - start, 3)) + " seconds")
     return image_scores
 
+# This sorts the list from highest score to lowest using 
+# Selection Sort. It finds the biggest value and swaps it to the front.
+# This ensures the most "at risk" images are presented first.
 def sort_my_list(image_scores):
     # Selection sort (descending by rust %)
     for i in range(len(image_scores)):
@@ -70,6 +83,9 @@ def sort_my_list(image_scores):
                 largest_index = j
         image_scores[i], image_scores[largest_index] = image_scores[largest_index], image_scores[i]
 
+# This searches the sorted list for a specific score. It 
+# splits the list in half over and over until it finds the target.
+# It uses a small tolerance (tol) to handle floating point comparisons.
 def search_for_rust(image_scores):
     # Binary search for user-input rust %
     query = input("\nEnter rust % to find (or skip): ")
